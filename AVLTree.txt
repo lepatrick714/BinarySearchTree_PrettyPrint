@@ -1,0 +1,198 @@
+/*to create this AVL Tree I used the site http://kukuruku.co/hub/cpp/avl-trees to understand how AVL trees work
+and did my own implementation of course looking at theirs for reference. I added a few of my own designs and some helper functions.
+Is in no way a pure copy of their functions, but I did use their functions to help construct mine.*/
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+template<class TYPE> class AVLTree{
+public:
+  struct node{
+      TYPE key;
+      node *left;
+      node *right;
+      int height;
+      node(TYPE value):key(value), left(0), right(0), height(1){};
+      ~node(){
+        if(right != 0)
+          delete right;
+        if(left != 0)
+          delete left;
+      }
+  };
+
+private:
+  node * root;
+  int max(int a, int b) const{
+      return (a > b)? a : b;
+  }
+
+  node* smallestnode(node * n){
+    node * p = n;
+    while(p->left)
+      p = p->left;
+    return p;
+  }
+
+  int height(node * n) const{
+      return (n)? n->height:0;
+  }
+
+  node* rrotate(node * n){
+      node * p = n->left;
+      node * q = p->right;
+
+      p->right = n;
+      n->left = q;
+
+      n->height = max(height(n->left), height(n->right))+1;
+      p->height = max(height(p->left), height(p->right))+1;
+
+      return p;
+  }
+
+  node* lrotate(node * n){
+      node * p = n->right;
+      node * T2 = p->left;
+
+      p->left = n;
+      n->right = T2;
+
+      n->height = max(height(n->left), height(n->right))+1;
+      p->height = max(height(p->left), height(p->right))+1;
+
+      return p;
+  }
+
+  int bfactor(node * n) const{
+      return (n) ? height(n->left) - height(n->right):0;
+  }
+
+  node* insert(node * n, TYPE key){
+      if (!n){
+          return new node(key);
+      }
+      if (key < n->key)
+          n->left  = insert(n->left, key);
+      else
+          n->right = insert(n->right, key);
+
+      n->height = max(height(n->left), height(n->right)) + 1;
+
+      int balance = bfactor(n);
+
+      if (balance > 1 && key < n->left->key)
+          return rrotate(n);
+      else if (balance < -1 && key >= n->right->key)
+          return lrotate(n);
+      else if (balance > 1 && key >= n->left->key){
+          n->left = lrotate(n->left);
+          return rrotate(n);
+      }
+      else if (balance < -1 && key < n->right->key){
+          n->right = rrotate(n->right);
+          return lrotate(n);
+      }
+      return n;
+  }
+
+  node* remove(node * n, TYPE key){
+    if(!n)
+        return n;
+
+    if(key < n->key)
+        n->left = remove(n->left, key);
+    else if(key > n->key)
+        n->right = remove(n->right, key);
+    else{
+        if(!(n->left) || !(n->right)){
+            node *temp = (n->left) ? n->left : n->right;
+            if(!temp){
+                temp = n;
+                n = 0;
+            }
+            else
+               *n = *temp;
+               if(temp != 0)
+                delete temp;
+        }
+        else{
+            node *temp = smallestnode(n->right);
+            n->key = temp->key;
+            n->right = remove(n->right, temp->key);
+        }
+    }
+    if (!n)
+      return n;
+
+    n->height = max(height(n->left), height(n->right)) + 1;
+
+    int balance = bfactor(n);
+
+    if (balance > 1 && bfactor(n->left) >= 0)
+        return rrotate(n);
+    else if (balance > 1 && bfactor(n->left) < 0){
+        root->left =  lrotate(n->left);
+        return rrotate(n);
+    }
+    else if (balance < -1 && bfactor(n->right) <= 0)
+        return lrotate(n);
+    else if (balance < -1 && bfactor(n->right) > 0){
+        root->right = rrotate(n->right);
+        return lrotate(n);
+    }
+    return n;
+  }
+
+  bool search(node * n, TYPE key) const{
+    if(!n)
+      return false;
+    if(n->key == key)
+      return true;
+    return (n->key > key)?search(n->left, key):search(n->right, key);
+  }
+
+  void prettyprint(node * p, const string &lineprefix, const string &nodetag, ostream &out) const{
+    if(!p)
+      return;
+    string l, r;
+    l = r = "  ";
+    if(p != root && nodetag.find('/') != string::npos)
+      r = "| ";
+    else if(p != root)
+      l = "| ";
+    if(p->left)
+      prettyprint(p->left, lineprefix + l, " / ", out);
+    if(p)
+      out << lineprefix << nodetag << p->key << endl;
+    if(p->right)
+      prettyprint(p->right, lineprefix + r, " \\ ", out);
+  }
+
+public:
+  AVLTree():root(0){}
+  ~AVLTree(){
+    delete root;
+  }
+
+  node* begin() const{
+    return root;
+  }
+
+  void insert(TYPE key){
+    root = insert(root, key);
+  }
+
+  bool search(TYPE key) const{
+    return search(root, key);
+  }
+
+  void prettyprint(ostream &out) const{
+    prettyprint(root, "", " < ", out);
+  };
+
+  void remove(TYPE key){
+    remove(root, key);
+  }
+};
