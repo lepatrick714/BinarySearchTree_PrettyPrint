@@ -28,3 +28,6 @@ Program will construct tree and print it.
       |  / 667
        \ 1014
 ```
+# References 
+Programmer: Patrick Le
+Credits: Dr. Molle (UCR)
